@@ -18,7 +18,7 @@ The environment consists of:
 - PowerShell for simulated suspicious activity
 - MITRE ATT&CK for technique mapping
 
-![SIEM Lab Architecture](01-siem-lab-architecture-and-attack-flow.png)
+![SIEM Lab Architecture](01-siem-lab-architecture.png)
 
 ## Investigation Scenario
 
