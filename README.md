@@ -50,6 +50,40 @@ This demonstrates the value of process creation telemetry for detecting suspicio
 
 ![Splunk PowerShell Detection](03-splunk-powershell-detection.png)
 
+### Detection Logic & False Positive Analysis
+
+The detection identifies `powershell.exe` process creation events (Sysmon Event ID 1) where the command line contains `-EncodedCommand`, and excludes Splunk's own internal PowerShell (`NOT Image="*splunk-powershell.exe"`) to reduce known noise.
+
+The presence of `-EncodedCommand` is suspicious, but not inherently malicious. Encoding may be used legitimately to reliably pass scripts or arguments containing quotes, special characters, or complex command structures. For example, software deployment tools, endpoint management platforms, RMM solutions, and automation frameworks may invoke encoded PowerShell.
+
+During triage, an analyst should review additional context before escalating, including:
+
+- Parent process
+- User context
+- Host and asset role
+- Decoded command contents
+- Execution frequency
+- Related process activity
+- Network connections
+- Whether the behavior is expected for the system or user
+
+For this reason, `-EncodedCommand` should be treated as an investigative indicator rather than standalone proof of malicious activity.
+
+### Detection Limitations & Evasion
+
+The current detection is intentionally simple and focuses on `powershell.exe` executions containing the `-EncodedCommand` parameter. As a result, it should not be considered comprehensive PowerShell detection coverage.
+
+An adversary may attempt to evade narrowly defined command-line detection by:
+
+- Using abbreviated PowerShell parameters such as `-enc` instead of `-EncodedCommand`
+- Executing PowerShell through `pwsh.exe` rather than `powershell.exe`
+- Renaming or copying the PowerShell executable
+- Using alternative execution methods that do not contain the expected command-line pattern
+
+Renaming `powershell.exe` could bypass detection logic that relies only on the `Image` field. However, Sysmon also records the executable's `OriginalFileName` metadata, which can still identify a renamed PowerShell binary. A more resilient detection could therefore correlate `Image`, `OriginalFileName`, command-line arguments, and process ancestry.
+
+More broadly, robust PowerShell detection should combine command-line analysis with process relationships, user context, PowerShell logging, endpoint telemetry, and behavioral indicators rather than relying on a single string match.
+
 ## 3. Base64 Payload Decoding
 
 The encoded PowerShell payload was decoded to recover the original command.
@@ -108,6 +142,18 @@ This lab demonstrates several core SOC investigation skills:
 - PowerShell
 - VMware Fusion
 - MITRE ATT&CK
+
+## Lessons Learned
+
+The most challenging part of this lab was not generating the PowerShell activity itself, but building a reliable telemetry pipeline. I had to configure the Windows 11 endpoint, Sysmon, Splunk Universal Forwarder, and Splunk Enterprise so that the components could communicate correctly and Sysmon events were successfully ingested and searchable in the SIEM.
+
+Building the detection reinforced the importance of tuning detection logic rather than simply searching for suspicious strings. Splunk's own `splunk-powershell.exe` activity created unnecessary matches, so I excluded it from the search to reduce known noise while preserving visibility into the simulated PowerShell execution.
+
+This lab helped me better understand the complete SOC investigation workflow from endpoint activity to analyst decision-making. PowerShell execution generates endpoint telemetry, Sysmon records the process activity, Splunk ingests the event, detection logic identifies suspicious behavior, and the analyst investigates and decodes the Base64 command to determine what was actually executed.
+
+The investigation also reinforced that a detection hit is only the beginning of the triage process. An indicator such as `-EncodedCommand` can be suspicious without being inherently malicious, so process context, user activity, decoded command contents, related telemetry, and expected system behavior must be considered before determining whether an event should be escalated.
+
+This lab intentionally used a relatively simple attack simulation. Future improvements could build on this foundation with more realistic attack scenarios, additional telemetry sources, more resilient detection logic, automated alerting, and correlation across multiple security data sources.
 
 ## Conclusion
 
