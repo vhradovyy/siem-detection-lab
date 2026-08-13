@@ -60,7 +60,7 @@ Decoded activity showed execution of:
 
 This allowed the activity to be interpreted in its original form rather than relying only on the encoded command line.
 
-![Base64 Decoded PowerShell Command](04-base64-decoded-powershell-command.png)
+![Base64 Decoded PowerShell Command](04-base64-decoded-command.png)
 
 ## 4. Sysmon Event Investigation
 
