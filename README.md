@@ -55,6 +55,7 @@ The following SPL query was used to identify PowerShell process execution while 
 ```spl
 index=main EventID=1 Image="*powershell.exe" NOT Image="*splunk-powershell.exe"
 | table _time User Image ParentImage CommandLine
+```
 
 This search focuses on Sysmon Event ID 1 (Process Creation) and returns the user, process image, parent process, and command-line arguments for investigation.
 
