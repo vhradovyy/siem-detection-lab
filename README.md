@@ -48,11 +48,21 @@ The investigation identified the PowerShell process execution and exposed comman
 
 This demonstrates the value of process creation telemetry for detecting suspicious PowerShell behavior.
 
+### SPL Detection Query
+
+The following SPL query was used to identify PowerShell process execution while excluding Splunk's own PowerShell process to reduce false positives:
+
+```spl
+index=main EventID=1 Image="*powershell.exe" NOT Image="*splunk-powershell.exe"
+| table _time User Image ParentImage CommandLine
+
+This search focuses on Sysmon Event ID 1 (Process Creation) and returns the user, process image, parent process, and command-line arguments for investigation.
+
 ![Splunk PowerShell Detection](03-splunk-powershell-detection.png)
 
 ### Detection Logic & False Positive Analysis
 
-The detection identifies `powershell.exe` process creation events (Sysmon Event ID 1) where the command line contains `-EncodedCommand`, and excludes Splunk's own internal PowerShell (`NOT Image="*splunk-powershell.exe"`) to reduce known noise.
+The detection identifies `powershell.exe` process creation events (Sysmon Event ID 1) while excluding Splunk's own internal PowerShell process (`Image="*splunk-powershell.exe"`) to reduce known noise. The `CommandLine` field is then reviewed during investigation for suspicious arguments such as `-EncodedCommand`.
 
 The presence of `-EncodedCommand` is suspicious, but not inherently malicious. Encoding may be used legitimately to reliably pass scripts or arguments containing quotes, special characters, or complex command structures. For example, software deployment tools, endpoint management platforms, RMM solutions, and automation frameworks may invoke encoded PowerShell.
 
